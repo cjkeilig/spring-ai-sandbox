@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * REST Controller for handling chat requests using Spring AI.
@@ -32,11 +34,12 @@ public class ChatEndpoint {
     }
 
     @GetMapping("/chat")
-    public String chat(@RequestParam(value = "message") String message) {
+    public Mono<String> chat(@RequestParam(value = "message") String message) {
         // For a non-streaming (blocking) response
-        return chatClient.prompt()
+        return Mono.fromCallable(() -> chatClient.prompt()
                 .user(message)
                 .call()
-                .content();
+                .content())
+                .subscribeOn(Schedulers.boundedElastic());
     }
 }
